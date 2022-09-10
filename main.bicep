@@ -94,7 +94,7 @@ targetScope = 'subscription'
   // 'uaecentral'
   // 'brazilsoutheast'
 ])
-param resourceGroupLocation string = 'westeurope'
+param resourceGroupLocation string
 
 @maxLength(3)
 param environment string = 'dev'

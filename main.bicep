@@ -164,6 +164,20 @@ param assignBatchServiceRoles bool = true
 ]) 
 param batchNodeSku  string = 'Standard_D2s_V3'
 
+
+@allowed([
+  'CapacityReservation'
+  'Free'
+  'LACluster'
+  'PerGB2018'
+  'PerNode'
+  'Premium'
+  'Standalone'
+  'Standard'
+])
+@description('Select the name for the SKU to use for the log analytics workpace')
+param logAnalyticsSku string = 'Free'
+
 // Hub Spoke Parameters
 //-------------------------------------------------------
 
@@ -1190,6 +1204,7 @@ module logAnalyticsWorkspace './modules/logAnalytics/logAnalytics.bicep' = {
   name: 'dpl-${uniqueString(deployment().name,deployment().location)}-logAnalytics'
   params: {
     logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
+    skuName: logAnalyticsSku
     tags: resourceTags
   }
   dependsOn: [

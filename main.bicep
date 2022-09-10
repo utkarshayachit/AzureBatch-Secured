@@ -151,7 +151,7 @@ param jumpboxWindowsVmSize string = 'Standard_D4_v5'
 @description('Get the Batch Service Object Id: az ad sp show --id "MicrosoftAzureBatch" --query objectId -o tsv')
 param batchServiceObjectId string 
 
-@description('Select true if Batch Service has not been gratned contributor permissions.')
+@description('Select true if Batch Service has not been granted contributor permissions.')
 param assignBatchServiceRoles bool = true
 
 @allowed([ 

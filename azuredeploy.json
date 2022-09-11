@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.10.13.619",
-      "templateHash": "16615939789882344768"
+      "templateHash": "10052187419767959260"
     }
   },
   "parameters": {
@@ -130,7 +130,6 @@
     },
     "assignBatchServiceRoles": {
       "type": "bool",
-      "defaultValue": true,
       "metadata": {
         "description": "Select true if Batch Service has not been granted contributor permissions."
       }
@@ -149,7 +148,6 @@
     },
     "logAnalyticsSku": {
       "type": "string",
-      "defaultValue": "Free",
       "metadata": {
         "description": "Select the name for the SKU to use for the log analytics workpace"
       },

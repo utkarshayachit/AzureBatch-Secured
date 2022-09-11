@@ -152,7 +152,7 @@ param jumpboxWindowsVmSize string = 'Standard_D4_v5'
 param batchServiceObjectId string = 'f520d84c-3fd3-4cc8-88d4-2ed25b00d27a'
 
 @description('Select true if Batch Service has not been granted contributor permissions.')
-param assignBatchServiceRoles bool = true
+param assignBatchServiceRoles bool
 
 @allowed([ 
   'Standard_D2s_V3'
@@ -176,7 +176,7 @@ param batchNodeSku  string = 'Standard_D2s_V3'
   'Standard'
 ])
 @description('Select the name for the SKU to use for the log analytics workpace')
-param logAnalyticsSku string = 'Free'
+param logAnalyticsSku string
 
 // Hub Spoke Parameters
 //-------------------------------------------------------

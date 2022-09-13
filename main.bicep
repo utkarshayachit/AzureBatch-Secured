@@ -1192,7 +1192,10 @@ param acrAdminUserEnabled bool = true
 
 param deployPrivateACR bool = true
 
-param primaryScriptBuildKvTestImage string = 'https://raw.githubusercontent.com/mocelj/AzureBatch-Secured/main/artefacts/checkAkv/buildRemoteContainer.sh'
+var primaryScriptBuildKvTestImages = {
+  'SecureBatch': 'https://raw.githubusercontent.com/mocelj/AzureBatch-Secured/main/artefacts/checkAkv/buildRemoteContainer.sh'
+  'AzFinSim': 'https://raw.githubusercontent.com/utkarshayachit/AzureBatch-Secured/azfinsim/artefacts/azfinsim/buildRemoteContainer.sh'
+}
 
 // Azure Batch Parameters
 
@@ -1326,7 +1329,7 @@ module deployDemoAzureBatchSecured './modules/Demos/Demo-Batch-Secured/demoAzure
     acrSku: acrSku
     acrAdminUserEnabled: acrAdminUserEnabled
     deployPrivateACR: deployPrivateACR
-    primaryScriptBuildKvTestImage: primaryScriptBuildKvTestImage
+    primaryScriptBuildKvTestImage: primaryScriptBuildKvTestImages[demoType]
     batchAccountName: batchAccountName
     batchServiceObjectId: batchServiceObjectId
     assignBatchServiceRoles: assignBatchServiceRoles

@@ -35,7 +35,7 @@ param deployPrivateAKV bool = true
 
 // Azure Batch
 
-// az ad sp show --id "MicrosoftAzureBatch" --query objectId -o tsv
+// az ad sp show --id "MicrosoftAzureBatch" --query id -o tsv
 param batchServiceObjectId string
 
 param assignBatchServiceRoles bool
@@ -106,7 +106,7 @@ var batchManagedIdentity = 'id-${environment}-${prefix}-azbatch'
 
 resource azBatchManagedIdentity  'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
   name: batchManagedIdentity
-  location: resourceGroup().location
+  location: location
   tags: tags
 }
 
@@ -116,11 +116,12 @@ resource azBatchManagedIdentity  'Microsoft.ManagedIdentity/userAssignedIdentiti
 module deployAzBatchKV '../../../modules/azureKeyVault/azureKeyVault.bicep' = {
   name: 'dpl-${uniqueString(deployment().name,location)}-batchKeyVault'
   params: {
+    location: location
     keyVaultName: kvName
     privateEndpointSubnetId: privateEndpointSubnetId
     deployPrivateKeyVault: deployPrivateAKV
-    enablePurgeProtection: true
-    enableSoftDelete: true
+    enablePurgeProtection: false
+    enableSoftDelete: false
     rgDNSZone: rgHub 
     tags: tags
   }
@@ -180,6 +181,7 @@ module kvPolicyManagedIdentity '../../../modules/azureKeyVault/azureKeyVaultAddA
 module deployBatchDemoStorageAccounts '../../../modules/Demos/Demo-Batch-Secured/demoAzureBatch-Secured-Storage.bicep' = {
   name: 'dpl-${uniqueString(deployment().name,location)}-batchStorageAccounts'
   params: {
+    location: location
     rgHub: rgHub
     kvName: kvName
     privateEndpointSubnetId: privateEndpointSubnetId
@@ -195,8 +197,6 @@ module deployBatchDemoStorageAccounts '../../../modules/Demos/Demo-Batch-Secured
 // Grant the managed Identity Contributor permissions to the storage accounts
 // https://docs.microsoft.com/en-us/azure/batch/resource-files?utm_source=pocket_mylist
 // Storage Blob Data Reader is minium role for MI
-
-
 module assignStorageAccountRole '../../../modules/storage/roleAssignmentStorage.bicep' = [ for (saDefinition,index) in saDefinitions: {
   name: 'dpl-${uniqueString(deployment().name,location)}-batchStorageRoleAssignment-${index}'
   params: {
@@ -221,6 +221,7 @@ module deployBatchDemoBuildACR '../../../modules/containerRegistry/acr.bicep' = 
   name: 'dpl-${uniqueString(deployment().name,location)}-batchBuildAcr'
   params: {
     name: acrBuildName
+    location: location
   }
 }
 
@@ -251,6 +252,7 @@ module deployBatchDemoACR '../../../modules/containerRegistry/acr.bicep' = {
   name: 'dpl-${uniqueString(deployment().name,location)}-batchAcr'
   params: {
     name: acrName
+    location: location
     acrAdminUserEnabled: acrAdminUserEnabled
     privateEndpoints: acrPrivateEndpoints
     acrSku: acrSku
@@ -273,6 +275,7 @@ var acrImageName = 'kvsecretsmi'
 module assignRGContributorRoleMI '../../../modules/azRoles/roleAssignmentResourceGroup.bicep' = {
   name: 'dpl-${uniqueString(deployment().name,location)}-RG-Contrib-MI'
   params: {
+    location: location
     builtInRoleType: 'Contributor'
     principalId: azBatchManagedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
@@ -283,6 +286,7 @@ module assignRGContributorRoleMI '../../../modules/azRoles/roleAssignmentResourc
 module deployCheckKVImage '../../../modules/deploymentScripts/deploymentScript-MI-ACR.bicep'  = {
   name: 'dpl-${uniqueString(deployment().name,location)}-Check-KV-Image'
   params: {
+    location: location
     acrBuildName: acrBuildName
     acrName: acrName
     acrImageName: acrImageName
@@ -302,6 +306,7 @@ module deployCheckKVImage '../../../modules/deploymentScripts/deploymentScript-M
 module deployAzureBatchAccount '../../../modules/azBatch/azBatchAccount-MI.bicep' = {
   name: 'dpl-${uniqueString(deployment().name,location)}-batchAccount'
   params: {
+    location: location
     batchAccountName: batchAccountName
     batchKeyVault: kvName
     batchManagedIdentity: batchManagedIdentity
@@ -348,14 +353,9 @@ module deployBatchPool '../../../modules/azBatch/azBatchPool.bicep' = {
     batchPoolSubnetId_Windows: batchPoolSubnetId_Windows
     saNameStorageSMB: saNameStorageSMB
     saNameStorageNFS: saNameStorageNFS
+    location: location
   }
   dependsOn: [
     deployAzureBatchAccount
   ]
 }
-
-
-
-
-
-

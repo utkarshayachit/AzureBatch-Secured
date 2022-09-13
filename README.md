@@ -8,11 +8,11 @@ This goal of this repository is to demonstrate how Azure Batch could be deployed
 ![Overview](./images/batch-private-cluster.png)
 
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Futkarshayachit%2FAzureBatch-Secured%2Fmain%2Fazuredeploy.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Futkarshayachit%2FAzureBatch-Secured%2Fazfinsim%2Fazuredeploy.json)
 
 alternatively, if your organization requires ms.portal.azure.com, try this button: 
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://ms.portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Futkarshayachit%2FAzureBatch-Secured%2Fmain%2Fazuredeploy.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://ms.portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Futkarshayachit%2FAzureBatch-Secured%2Fazfinsim%2Fazuredeploy.json)
 
 [See explanation of the parameters](#Parameters)
 

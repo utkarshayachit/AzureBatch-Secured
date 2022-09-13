@@ -99,8 +99,19 @@ param resourceGroupLocation string
 @maxLength(3)
 param environment string = 'dev'
 
+@description('Incidate which demo to deploy')
+@allowed([
+  'SecureBatch'
+  'AzFinSim'
+])
+param demoType string = 'AzFinSim'
+var suffixes = {
+  'SecureBatch': 'azbatch'
+  'AzFinSim': 'azfinsim'
+}
+
 @maxLength(13)
-param prefix string = uniqueString(environment,subscription().id,resourceGroupLocation)
+param prefix string = uniqueString(environment, subscription().id, resourceGroupLocation, demoType)
 
 @description('Indicate if Hub-Spoke Network should be deployed.')
 param deployHubSpoke bool = true
@@ -116,23 +127,28 @@ param ignoreDnsZoneNwLinks bool = false
 @description('Indicate if a VPN Gateway should be deployed. Note: deployment may take up to 45 min addtional time. Certificate has to be added after creation.')
 param deployVPNGw bool = false
 
-@description('Indicate if Azure Batch Demo should be deployed.')
-param deploySecureBatch bool = true
+@description('Name/email of the deployment creator. Simply used as annotations on resources')
+param owner string = 'Your Name or Email'
 
 param utcShort string = utcNow('d')
-
-param resourceTags object = {
+param tags object = {
   WorkloadName : 'Back Office Risk'
   BusinessUnit : 'Risk Managment'
-  Owner: 'Darko Mocelj'
-  Environment: environment
   CostCenter: 'Internal'
-  LastDeployed: utcShort
 }
 
+var builtinTags = {
+  Environment: environment
+  LastDeployed: utcShort
+  Owner: owner
+}
+var resourceTags = union(tags, builtinTags)
+
+@description('Administrator username of Jumpbox VMs')
 param adminUserName string = 'localadmin'
 
 @secure()
+@description('Admin password for Jumbox VMs')
 param adminPassword string 
 
 @allowed([
@@ -152,7 +168,7 @@ param jumpboxWindowsVmSize string = 'Standard_D4_v5'
 param batchServiceObjectId string = 'f520d84c-3fd3-4cc8-88d4-2ed25b00d27a'
 
 @description('Select true if Batch Service has not been granted contributor permissions.')
-param assignBatchServiceRoles bool
+param assignBatchServiceRoles bool = false
 
 @allowed([ 
   'Standard_D2s_V3'
@@ -163,7 +179,6 @@ param assignBatchServiceRoles bool
   'Standard_F8s_v2'
 ]) 
 param batchNodeSku  string = 'Standard_D2s_V3'
-
 
 @allowed([
   'CapacityReservation'
@@ -176,7 +191,7 @@ param batchNodeSku  string = 'Standard_D2s_V3'
   'Standard'
 ])
 @description('Select the name for the SKU to use for the log analytics workpace')
-param logAnalyticsSku string
+param logAnalyticsSku string = 'PerGB2018'
 
 // Hub Spoke Parameters
 //-------------------------------------------------------
@@ -1139,8 +1154,8 @@ var saDefinitions = [
 var rgHub = 'rg-${environment}-${prefix}-vnet-hub-01'
 var rgSpoke01 = 'rg-${environment}-${prefix}-vnet-spoke-01'
 var rgSpoke02 = 'rg-${environment}-${prefix}-vnet-spoke-02'
-var rgJumpbox = 'rg-${environment}-${prefix}-jumpbox' 
-var rgAzureBatch  = 'rg-${environment}-${prefix}-azbatch' 
+var rgJumpbox = 'rg-${environment}-${prefix}-jumpbox'
+var rgAzureBatch  = 'rg-${environment}-${prefix}-${suffixes[demoType]}'
 
 var azureFirewallName  = 'fw-${environment}-${prefix}-vnet-hub-01'
 var bastionName = 'bas-${environment}-${prefix}-vnet-hub-01'
@@ -1223,6 +1238,7 @@ module appInsights './modules/appInsights/deploy.bicep' = {
     appInsightsWorkspaceResourceId: logAnalyticsWorkspace.outputs.id
     name: appInsightsName
     tags:resourceTags
+    location: resourceGroupLocation
   }
   dependsOn: [
     rgModule
@@ -1280,6 +1296,7 @@ module deployVPNGwToHub './modules/networking/vpnGateway/deploy.bicep' = if (dep
     enableBgp: false
     vpnType: 'RouteBased'
     vpnClientAddressPoolPrefix: vpnClientAddressPoolPrefix
+    location: resourceGroupLocation
   }
 
   dependsOn: [
@@ -1290,10 +1307,11 @@ module deployVPNGwToHub './modules/networking/vpnGateway/deploy.bicep' = if (dep
 
 //---------------------------  Deploy the Azure Batch Demo to Spoke 01------------------------------------------------------
 
-module deployDemoAzureBatchSecured './modules/Demos/Demo-Batch-Secured/demoAzureBatch-Secured.bicep' = if (deploySecureBatch) {
+module deployDemoAzureBatchSecured './modules/Demos/Demo-Batch-Secured/demoAzureBatch-Secured.bicep' = {
   scope: resourceGroup(rgAzureBatch)
   name: 'dpl-${uniqueString(deployment().name,deployment().location)}-azBatchSecured'
   params: {
+    location: resourceGroupLocation
     rgAzureBatch: rgAzureBatch
     rgHub: rgHub
     rgSpoke: rgSpoke01

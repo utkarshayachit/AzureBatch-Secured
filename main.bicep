@@ -1202,8 +1202,6 @@ var primaryScriptBuildKvTestImages = {
 var batchAccountName = 'ba${environment}${prefix}01'
 
 //--------------------------- Deploy the Resource Groups ------------------------------------------------------------------ 
-
-@batchSize(1)
 module rgModule './modules/resourceGroup/resourceGroup.bicep' = [ for resourceGroupName in resourceGroupNames: {
   name: 'dpl-${uniqueString(deployment().name,deployment().location)}-Sub-${resourceGroupName}'
   params: {

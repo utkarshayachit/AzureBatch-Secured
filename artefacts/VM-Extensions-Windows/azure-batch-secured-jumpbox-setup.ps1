@@ -1,7 +1,7 @@
 param (
     [string] $BatchExplorerURL   = "https://github.com/Azure/BatchExplorer/releases/download/v2.11.0-stable.541/BatchExplorer.Setup.2.11.0-stable.541.exe",
     [string] $StorageExplorerURL = "https://github.com/microsoft/AzureStorageExplorer/releases/download/v1.22.0/Windows_StorageExplorer.exe",
-    [string] $AzCliURL           = "https://azcliprod.blob.core.windows.net/msi/azure-cli-2.31.0.msi"
+    [string] $AzCliURL           = "https://azcliprod.blob.core.windows.net/msi/azure-cli-2.40.0.msi"
 )
 
 # File to write logs

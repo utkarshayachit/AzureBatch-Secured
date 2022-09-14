@@ -338,7 +338,7 @@ module deployAzureBatchAccount '../../../modules/azBatch/azBatchAccount-MI.bicep
 // Mount SBM Shares on Windows Pool(s)
 
 
-module deployBatchPool '../../../modules/azBatch/azBatchPool.bicep' = if (false) {
+module deployBatchPool '../../../modules/azBatch/azBatchPool.bicep' = {
   name: 'dpl-${uniqueString(deployment().name,location)}-batchPool-main'
   params: {
     batchAccountName: batchAccountName

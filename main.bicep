@@ -109,6 +109,10 @@ var suffixes = {
   'SecureBatch': 'azbatch'
   'AzFinSim': 'azfinsim'
 }
+var needsRedisCache = {
+  SecureBatch: false
+  AzFinSim: true
+}
 
 @maxLength(13)
 param prefix string = uniqueString(environment, subscription().id, resourceGroupLocation, demoType)
@@ -1075,7 +1079,8 @@ var privateDnsZoneNamesBase = [
   'privatelink.blob.${az.environment().suffixes.storage}'
   'privatelink.file.${az.environment().suffixes.storage}'
   'privatelink.vaultcore.azure.net'
-  'privatelink.${resourceGroupLocation}.batch.azure.com' 
+  'privatelink.${resourceGroupLocation}.batch.azure.com'
+  'privatelink.redis.cache.windows.net'
 ]
 
 
@@ -1327,6 +1332,7 @@ module deployDemoAzureBatchSecured './modules/Demos/Demo-Batch-Secured/demoAzure
     acrSku: acrSku
     acrAdminUserEnabled: acrAdminUserEnabled
     deployPrivateACR: deployPrivateACR
+    deployRedisCache: needsRedisCache[demoType]
     primaryScriptBuildKvTestImage: primaryScriptBuildKvTestImages[demoType]
     batchAccountName: batchAccountName
     batchServiceObjectId: batchServiceObjectId

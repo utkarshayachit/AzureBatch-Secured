@@ -48,6 +48,10 @@ param location string = resourceGroup().location
 
 param appInsightsName string 
 
+
+// Redis cache
+param deployRedisCache bool
+
 //------------------------------------------------------------------------
 //  This Demo will deploy an Azure Batch account with 3 pools in a secured
 //  environment.
@@ -208,6 +212,27 @@ module assignStorageAccountRole '../../../modules/storage/roleAssignmentStorage.
     deployBatchDemoStorageAccounts
   ]
 }]
+
+// Create the Redis Cache
+// -----------------------------------------------------------------------
+
+var redisCacheName = '${environment}${prefix}redis'
+module deployRedisCacheDPL '../../../modules/redis/redis.bicep' = if (deployRedisCache) {
+  name: 'dpl-${uniqueString(deployment().name,location)}-redis'
+  params: {
+    kvName: kvName
+    redisCacheName: redisCacheName
+    tags: tags
+    location: location
+    privateEndpointSubnetId: privateEndpointSubnetId
+    rgHub: rgHub
+    redisCacheManagedIdentityName: azBatchManagedIdentity.name
+  }
+  dependsOn: [
+    kvPolicyManagedIdentity
+  ]
+}
+
 
 // Create the Azure Container Registry
 //------------------------------------------------------------------------

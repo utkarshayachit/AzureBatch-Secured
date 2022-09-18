@@ -179,6 +179,35 @@ module kvPolicyManagedIdentity '../../../modules/azureKeyVault/azureKeyVaultAddA
   ]
 }
 
+// Save app insights info in key vault
+resource keyVault 'Microsoft.KeyVault/vaults@2021-06-01-preview' existing = {
+  name: kvName
+}
+
+resource asecret0 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'azfinsim-appinsights-key'
+  tags: tags
+  properties: {
+    value: appInsightsInstrumentKey
+  }
+  dependsOn: [
+    deployAzBatchKV
+  ]
+}
+
+resource asecret1 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'azfinsim-appinsights-app-id'
+  tags: tags
+  properties: {
+    value: appInsightsAppId
+  }
+  dependsOn: [
+    deployAzBatchKV
+  ]
+}
+
 // Create required storage accounts
 //------------------------------------------------------------------------
 

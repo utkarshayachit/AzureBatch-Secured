@@ -7,7 +7,10 @@ echo "Script triggered by cloud-init process"
 
 apt update
 apt upgrade -y
-apt install  azure-cli nfs-common jq -y
+apt install curl nfs-common jq -y
+
+# Install latest Azure CLI
+curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 # Mount the NFS File Share
 

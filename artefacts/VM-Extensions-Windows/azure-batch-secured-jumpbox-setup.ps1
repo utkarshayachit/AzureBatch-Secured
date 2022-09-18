@@ -2,6 +2,7 @@ param (
     [string] $BatchExplorerURL   = "https://batchexplorer.azureedge.net/stable/2.15.0-stable.634/BatchExplorer%20Setup%202.15.0-stable.634.exe",
     [string] $StorageExplorerURL = "https://github.com/microsoft/AzureStorageExplorer/releases/download/v1.22.0/Windows_StorageExplorer.exe",
     [string] $AzCliURL           = "https://azcliprod.blob.core.windows.net/msi/azure-cli-2.40.0.msi"
+    [string] $PythonURL          = "https://raw.githubusercontent.com/mocelj/AzureBatch-Secured/main/artefacts/Python/python-3.10.1-amd64.exe"
 )
 
 # File to write logs
@@ -41,6 +42,13 @@ try {
     $AzCliOutFile = ".\AzCli.msi"
     Invoke-WebRequest -Uri $AzCliURL -OutFile $AzCliOutFile
 
+    ">> Download finished..." | Out-File $OutputFile -Append
+
+    # Download Python
+
+    ">> Downloading Python from: $($PythonURL)" | Out-File $OutputFile -Append
+    $PythonOutFile = ".\Python.msi"
+    Invoke-WebRequest -Uri $PythonURL -OutFile $PythonOutFile
 
     ">> Download finished..." | Out-File $OutputFile -Append
 
@@ -54,10 +62,12 @@ try {
     Start-Process -Wait -FilePath $StorageExplorerOutFile -ArgumentList "/VERYSILENT /NORESTART /ALLUSERS" -PassThru
     ">> Storage Explorer installed..." | Out-File $OutputFile -Append
 
-    
     Start-Process msiexec.exe -Wait -ArgumentList '/I AzCli.msi /quiet'
     ">> Azure CLI installed..." | Out-File $OutputFile -Append
-    
+
+    Start-Process -Wait -FilePath $PythonOutFile -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1 Include_test=0" -PassThru
+    ">> Python installed..." | Out-File $OutputFile -Append
+
     ">> Finished Software installation." | Out-File $OutputFile -Append
 } catch {
     ">> ERROR:" | Out-File $OutputFile -Append

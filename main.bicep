@@ -124,7 +124,7 @@ param deployHubSpoke bool = true
 param deployJumpBoxVMs bool = true
 
 param deployJumpboxWindowsAddOns bool = true
-param vmExtensionWindowsJumpboxUri  string = 'https://raw.githubusercontent.com/utkarshayachit/AzureBatch-Secured/azfinsim/artefacts/VM-Extensions-Windows/azure-batch-secured-jumpbox-setup.ps1'
+param vmExtensionWindowsJumpboxUri  string = 'https://raw.githubusercontent.com/mocelj/AzureBatch-Secured/main/artefacts/VM-Extensions-Windows/azure-batch-secured-jumpbox-setup.ps1'
 
 param ignoreDnsZoneNwLinks bool = false
 

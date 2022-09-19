@@ -397,6 +397,7 @@ var keys = [
   'appinsights-key'
   'appinsights-app-id'
   'batch-endpoint'
+  'batch-rg'
   'task-acr-image'
 ]
 
@@ -404,6 +405,7 @@ var secrets = {
   'appinsights-key': appInsightsInstrumentKey
   'appinsights-app-id': appInsightsAppId
   'batch-endpoint': deployAzureBatchAccount.outputs.privateEndpointFqdn
+  'batch-rg': rgAzureBatch
   'task-acr-image': deployCheckKVImage.outputs.fullImageName
 }
 

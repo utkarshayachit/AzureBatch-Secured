@@ -419,4 +419,6 @@ resource secretResources 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = [for k
   ]
 }]
 
-output managedIdentityName string = batchManagedIdentity
+output managedIdentityName string = azBatchManagedIdentity.name
+output managedIdentityClientId string = azBatchManagedIdentity.properties.clientId
+output kvName string = kvName

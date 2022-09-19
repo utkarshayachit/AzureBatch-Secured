@@ -11,7 +11,7 @@ param vmExtensionWindowsJumpboxUri string
 param rgHub string
 param tags object = {}
 param managedIdentityName string
-
+param rgManagedIdentity string
 
 // Reference to the Hub VNET
 
@@ -30,6 +30,7 @@ module jumpboxVM '../../modules/virtualMachines/vmSimple.bicep' = {
     vmObject: vmObjectJumpbox
     tags: tags
     managedIdentityName: managedIdentityName
+    rgManagedIdentity: rgManagedIdentity
   }
   dependsOn: []
 }
@@ -43,6 +44,7 @@ module jumpboxWindowsVM '../../modules/virtualMachines/vmSimple.bicep' = {
     vmCount: 1
     tags: tags
     managedIdentityName: managedIdentityName
+    rgManagedIdentity: rgManagedIdentity
   }
   dependsOn: []
 }

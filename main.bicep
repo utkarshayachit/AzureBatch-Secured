@@ -1031,47 +1031,6 @@ var fwApplicationRuleCollections = [
 ]
 
 
-// VM Configurations (Jumpbox and Test VMs)
-//-------------------------------------------------------
-
-var linuxVmInitScriptRaw = loadTextContent('./modules/virtualMachines/linux-vm-init-script.sh')
-var linuxVmInitScript = format(linuxVmInitScriptRaw,saNameStorageNFS,'container')
-
-var vmObjectJumpbox  = {
-  nicName: 'nic-jumpbox-linux-'
-  vmName: 'vm-jumpbox-linux-'
-  vmSize: jumpboxLinuxVmSize
-  osProfile: {
-    computerName: 'LinuxJumpbox'
-    adminUserName: adminUserName
-    adminPassword: adminPassword
-    customData: base64(linuxVmInitScript)
-  }
-  imageReference: {
-    publisher: 'canonical'
-    offer: '0001-com-ubuntu-server-focal'
-    sku: '20_04-lts-gen2'
-    version: 'latest'
-  }
-}
-
-var vmObjectJumpboxWindows  = {
-  nicName: 'nic-jumpbox-windows-'
-  vmName: 'vm-jumpbox-windows-'
-  vmSize: jumpboxWindowsVmSize
-  osProfile: {
-    computerName: 'WindowsJumpbox'
-    adminUserName: adminUserName
-    adminPassword: adminPassword
-  }
-  imageReference: {
-    publisher: 'microsoftwindowsdesktop'
-    offer: 'windows-11'
-    sku: 'win11-21h2-pro'
-    version: 'latest'
-  }
-}
-
 // DNZ Parameters
 //-------------------------------------------------------
 
@@ -1352,6 +1311,50 @@ module deployDemoAzureBatchSecured './modules/Demos/Demo-Batch-Secured/demoAzure
 
 // Dependency to Azure Batch Deployment, since the NFS (blob) Share will be mounted to the Linux Jumpbox
 
+
+// VM Configurations (Jumpbox and Test VMs)
+//-------------------------------------------------------
+
+var linuxVmInitScriptRaw = loadTextContent('./modules/virtualMachines/linux-vm-init-script.sh')
+var linuxVmInitScript = format(linuxVmInitScriptRaw, saNameStorageNFS, 'container', deployDemoAzureBatchSecured.outputs.kvName, deployDemoAzureBatchSecured.outputs.managedIdentityClientId)
+
+var vmObjectJumpbox  = {
+  nicName: 'nic-jumpbox-linux-'
+  vmName: 'vm-jumpbox-linux-'
+  vmSize: jumpboxLinuxVmSize
+  osProfile: {
+    computerName: 'LinuxJumpbox'
+    adminUserName: adminUserName
+    adminPassword: adminPassword
+    customData: base64(linuxVmInitScript)
+  }
+  imageReference: {
+    publisher: 'canonical'
+    offer: '0001-com-ubuntu-server-focal'
+    sku: '20_04-lts-gen2'
+    version: 'latest'
+  }
+}
+
+var vmObjectJumpboxWindows  = {
+  nicName: 'nic-jumpbox-windows-'
+  vmName: 'vm-jumpbox-windows-'
+  vmSize: jumpboxWindowsVmSize
+  osProfile: {
+    computerName: 'WindowsJumpbox'
+    adminUserName: adminUserName
+    adminPassword: adminPassword
+  }
+  imageReference: {
+    publisher: 'microsoftwindowsdesktop'
+    offer: 'windows-11'
+    sku: 'win11-21h2-pro'
+    version: 'latest'
+  }
+}
+
+
+
 module hubJumpboxes './modules/virtualMachines/hubJumpboxes.bicep' = if (deployJumpBoxVMs) { 
   scope: resourceGroup(rgJumpbox)
   name:  'dpl-${uniqueString(deployment().name,deployment().location)}-jumpbox'
@@ -1364,6 +1367,7 @@ module hubJumpboxes './modules/virtualMachines/hubJumpboxes.bicep' = if (deployJ
     rgHub: rgHub
     tags: resourceTags
     managedIdentityName: deployDemoAzureBatchSecured.outputs.managedIdentityName
+    rgManagedIdentity: rgAzureBatch
   }
   dependsOn: [
     rgModule

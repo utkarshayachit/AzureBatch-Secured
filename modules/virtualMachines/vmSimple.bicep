@@ -7,8 +7,10 @@ param subnetId string
 param tags object = {}
 
 param managedIdentityName string
+param rgManagedIdentity string
 
 resource mi 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  scope: resourceGroup(rgManagedIdentity)
   name: managedIdentityName
 }
 

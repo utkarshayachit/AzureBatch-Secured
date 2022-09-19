@@ -10,6 +10,7 @@ param deployJumpboxWindowsAddOns bool
 param vmExtensionWindowsJumpboxUri string
 param rgHub string
 param tags object = {}
+param managedIdentityName string
 
 
 // Reference to the Hub VNET
@@ -28,6 +29,7 @@ module jumpboxVM '../../modules/virtualMachines/vmSimple.bicep' = {
     subnetId: '${vNetHub.id}/subnets/${vNetHubObject.subnets[vNetHubObject.positionJumpBox].subnetName}'
     vmObject: vmObjectJumpbox
     tags: tags
+    managedIdentityName: managedIdentityName
   }
   dependsOn: []
 }
@@ -40,6 +42,7 @@ module jumpboxWindowsVM '../../modules/virtualMachines/vmSimple.bicep' = {
     vmObject: vmObjectJumpboxWindows
     vmCount: 1
     tags: tags
+    managedIdentityName: managedIdentityName
   }
   dependsOn: []
 }

@@ -6,6 +6,11 @@ param vmObject object
 param subnetId string
 param tags object = {}
 
+param managedIdentityName string
+
+resource mi 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+  name: managedIdentityName
+}
 
 resource nicNameVMResource 'Microsoft.Network/networkInterfaces@2020-05-01' = [for i in range(0, vmCount): {
   name: '${vmObject.nicName}${i + 1}'
@@ -39,6 +44,12 @@ resource vmResource 'Microsoft.Compute/virtualMachines@2019-07-01' = [for i in r
   dependsOn:[
     nicNameVMResource
   ]
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${mi.id}': {}
+    }
+  }
   tags: tags
   properties: {
     hardwareProfile: {

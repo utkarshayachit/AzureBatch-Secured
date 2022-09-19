@@ -1363,6 +1363,7 @@ module hubJumpboxes './modules/virtualMachines/hubJumpboxes.bicep' = if (deployJ
     deployJumpboxWindowsAddOns: deployJumpboxWindowsAddOns
     rgHub: rgHub
     tags: resourceTags
+    managedIdentityName: deployDemoAzureBatchSecured.outputs.managedIdentityName
   }
   dependsOn: [
     rgModule

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.10.61.36676",
-      "templateHash": "10716797379974068146"
+      "templateHash": "14460746085404774064"
     }
   },
   "parameters": {
@@ -212,6 +212,10 @@
     "suffixes": {
       "SecureBatch": "azbatch",
       "AzFinSim": "azfinsim"
+    },
+    "needsRedisCache": {
+      "SecureBatch": false,
+      "AzFinSim": true
     },
     "builtinTags": {
       "Environment": "[parameters('environment')]",
@@ -1041,46 +1045,12 @@
         }
       }
     ],
-    "linuxVmInitScriptRaw": "#!/bin/sh\n\necho \"Script triggered by cloud-init process\"\n\n\n# Install required packages and ensure installed packages are updated\n\napt update\napt upgrade -y\napt install  azure-cli nfs-common jq -y\n\n# Mount the NFS File Share\n\nmkdir -p /mnt/share\n\nmount -o sec=sys,vers=3,nolock,proto=tcp {0}.blob.core.windows.net:/{0}/{1}  /mnt/share\n\n",
-    "linuxVmInitScript": "[format(variables('linuxVmInitScriptRaw'), variables('saNameStorageNFS'), 'container')]",
-    "vmObjectJumpbox": {
-      "nicName": "nic-jumpbox-linux-",
-      "vmName": "vm-jumpbox-linux-",
-      "vmSize": "[parameters('jumpboxLinuxVmSize')]",
-      "osProfile": {
-        "computerName": "LinuxJumpbox",
-        "adminUserName": "[parameters('adminUserName')]",
-        "adminPassword": "[parameters('adminPassword')]",
-        "customData": "[base64(variables('linuxVmInitScript'))]"
-      },
-      "imageReference": {
-        "publisher": "canonical",
-        "offer": "0001-com-ubuntu-server-focal",
-        "sku": "20_04-lts-gen2",
-        "version": "latest"
-      }
-    },
-    "vmObjectJumpboxWindows": {
-      "nicName": "nic-jumpbox-windows-",
-      "vmName": "vm-jumpbox-windows-",
-      "vmSize": "[parameters('jumpboxWindowsVmSize')]",
-      "osProfile": {
-        "computerName": "WindowsJumpbox",
-        "adminUserName": "[parameters('adminUserName')]",
-        "adminPassword": "[parameters('adminPassword')]"
-      },
-      "imageReference": {
-        "publisher": "microsoftwindowsdesktop",
-        "offer": "windows-11",
-        "sku": "win11-21h2-pro",
-        "version": "latest"
-      }
-    },
     "privateDnsZoneNamesBase": [
       "[format('privatelink.blob.{0}', environment().suffixes.storage)]",
       "[format('privatelink.file.{0}', environment().suffixes.storage)]",
       "privatelink.vaultcore.azure.net",
-      "[format('privatelink.{0}.batch.azure.com', parameters('resourceGroupLocation'))]"
+      "[format('privatelink.{0}.batch.azure.com', parameters('resourceGroupLocation'))]",
+      "privatelink.redis.cache.windows.net"
     ],
     "privateDnsZoneNameACR": [
       "[format('privatelink{0}', environment().suffixes.acrLoginServer)]"
@@ -1165,15 +1135,30 @@
     "logAnalyticsWorkspaceName": "[format('log-{0}-{1}-{2}', parameters('environment'), parameters('prefix'), uniqueString(subscription().subscriptionId, format('rg-{0}-vnet-hub-01', parameters('prefix'))))]",
     "appInsightsName": "[format('appi-{0}-{1}-{2}', parameters('environment'), parameters('prefix'), uniqueString(subscription().subscriptionId, format('rg-{0}-vnet-hub-01', parameters('prefix'))))]",
     "vpnGwName": "[format('vpnGw{0}{1}01', parameters('environment'), parameters('prefix'))]",
-    "vpnClientAddressPoolPrefix": "172.16.25.0/24"
+    "vpnClientAddressPoolPrefix": "172.16.25.0/24",
+    "linuxVmInitScriptRaw": "#!/bin/sh\n\necho \"Script triggered by cloud-init process\"\n\n\n# Install required packages and ensure installed packages are updated\n\napt update\napt upgrade -y\napt install curl nfs-common jq python3-pip redis-tools -y\n\n# Install latest Azure CLI\ncurl -sL https://aka.ms/InstallAzureCLIDeb | bash\n\n# Mount the NFS File Share\n\nmkdir -p /mnt/share\n\nmount -o sec=sys,vers=3,nolock,proto=tcp {0}.blob.core.windows.net:/{0}/{1}  /mnt/share\n\n# AzFinSim setup\ngit clone https://github.com/utkarshayachit/azfinsim /azfinsim\n\necho \"export AZFINSIM_KEYVAULT_NAME={2}\" > /azfinsim/scripts/config.sh\necho \"export AZURE_CLIENT_ID={3}\" >> /azfinsim/scripts/config.sh\nchmod a+rx /azfinsim/scripts/config.sh",
+    "vmObjectJumpboxWindows": {
+      "nicName": "nic-jumpbox-windows-",
+      "vmName": "vm-jumpbox-windows-",
+      "vmSize": "[parameters('jumpboxWindowsVmSize')]",
+      "osProfile": {
+        "computerName": "WindowsJumpbox",
+        "adminUserName": "[parameters('adminUserName')]",
+        "adminPassword": "[parameters('adminPassword')]"
+      },
+      "imageReference": {
+        "publisher": "microsoftwindowsdesktop",
+        "offer": "windows-11",
+        "sku": "win11-21h2-pro",
+        "version": "latest"
+      }
+    }
   },
   "resources": [
     {
       "copy": {
         "name": "rgModule",
-        "count": "[length(variables('resourceGroupNames'))]",
-        "mode": "serial",
-        "batchSize": 1
+        "count": "[length(variables('resourceGroupNames'))]"
       },
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2020-10-01",
@@ -4666,6 +4651,9 @@
           "deployPrivateACR": {
             "value": "[parameters('deployPrivateACR')]"
           },
+          "deployRedisCache": {
+            "value": "[variables('needsRedisCache')[parameters('demoType')]]"
+          },
           "primaryScriptBuildKvTestImage": {
             "value": "[variables('primaryScriptBuildKvTestImages')[parameters('demoType')]]"
           },
@@ -4698,7 +4686,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.10.61.36676",
-              "templateHash": "16758724269329552831"
+              "templateHash": "1312772148352736665"
             }
           },
           "parameters": {
@@ -4776,6 +4764,9 @@
             },
             "appInsightsName": {
               "type": "string"
+            },
+            "deployRedisCache": {
+              "type": "bool"
             }
           },
           "variables": {
@@ -4785,6 +4776,7 @@
             "batchPoolSubnetId_LinuxNoSsh": "[format('{0}/subnets/{1}', extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('rgSpoke')), 'Microsoft.Network/virtualNetworks', parameters('vNetObject').vNetName), parameters('vNetObject').subnets[parameters('vNetObject').positionLinuxNoSshSubnet].subnetName)]",
             "batchPoolSubnetId_Windows": "[format('{0}/subnets/{1}', extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('rgSpoke')), 'Microsoft.Network/virtualNetworks', parameters('vNetObject').vNetName), parameters('vNetObject').subnets[parameters('vNetObject').positionWindowsSubnet].subnetName)]",
             "batchManagedIdentity": "[format('id-{0}-{1}-azbatch', parameters('environment'), parameters('prefix'))]",
+            "redisCacheName": "[format('{0}{1}redis', parameters('environment'), parameters('prefix'))]",
             "acrBuildName": "[format('acr{0}{1}temp', parameters('environment'), parameters('prefix'))]",
             "acrPrivateEndpoints_tmp": [
               {
@@ -4797,7 +4789,14 @@
               }
             ],
             "acrPrivateEndpoints": "[if(parameters('deployPrivateACR'), variables('acrPrivateEndpoints_tmp'), createArray())]",
-            "acrImageName": "kvsecretsmi"
+            "acrImageName": "kvsecretsmi",
+            "keys": [
+              "appinsights-key",
+              "appinsights-app-id",
+              "batch-endpoint",
+              "batch-rg",
+              "task-acr-image"
+            ]
           },
           "resources": [
             {
@@ -4806,6 +4805,24 @@
               "name": "[variables('batchManagedIdentity')]",
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]"
+            },
+            {
+              "copy": {
+                "name": "secretResources",
+                "count": "[length(variables('keys'))]"
+              },
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2022-07-01",
+              "name": "[format('{0}/{1}', variables('kvName'), format('azfinsim-{0}', variables('keys')[copyIndex()]))]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "value": "[createObject('appinsights-key', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('rgHub')), 'Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').InstrumentationKey, 'appinsights-app-id', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('rgHub')), 'Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').ApplicationId, 'batch-endpoint', reference(resourceId('Microsoft.Resources/deployments', format('dpl-{0}-batchAccount', uniqueString(deployment().name, parameters('location'))))).outputs.privateEndpointFqdn.value, 'batch-rg', parameters('rgAzureBatch'), 'task-acr-image', reference(resourceId('Microsoft.Resources/deployments', format('dpl-{0}-Check-KV-Image', uniqueString(deployment().name, parameters('location'))))).outputs.fullImageName.value)[variables('keys')[copyIndex()]]]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', format('dpl-{0}-batchKeyVault', uniqueString(deployment().name, parameters('location'))))]",
+                "[resourceId('Microsoft.Resources/deployments', format('dpl-{0}-batchAccount', uniqueString(deployment().name, parameters('location'))))]",
+                "[resourceId('Microsoft.Resources/deployments', format('dpl-{0}-Check-KV-Image', uniqueString(deployment().name, parameters('location'))))]"
+              ]
             },
             {
               "condition": "[parameters('assignBatchServiceRoles')]",
@@ -4904,10 +4921,10 @@
                     "value": "[parameters('deployPrivateAKV')]"
                   },
                   "enablePurgeProtection": {
-                    "value": false
+                    "value": true
                   },
                   "enableSoftDelete": {
-                    "value": false
+                    "value": true
                   },
                   "rgDNSZone": {
                     "value": "[parameters('rgHub')]"
@@ -5846,6 +5863,280 @@
               "dependsOn": [
                 "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('batchManagedIdentity'))]",
                 "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('rgAzureBatch')), 'Microsoft.Resources/deployments', format('dpl-{0}-batchStorageAccounts', uniqueString(deployment().name, parameters('location'))))]"
+              ]
+            },
+            {
+              "condition": "[parameters('deployRedisCache')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2020-10-01",
+              "name": "[format('dpl-{0}-redis', uniqueString(deployment().name, parameters('location')))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "kvName": {
+                    "value": "[variables('kvName')]"
+                  },
+                  "redisCacheName": {
+                    "value": "[variables('redisCacheName')]"
+                  },
+                  "tags": {
+                    "value": "[parameters('tags')]"
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "privateEndpointSubnetId": {
+                    "value": "[variables('privateEndpointSubnetId')]"
+                  },
+                  "rgHub": {
+                    "value": "[parameters('rgHub')]"
+                  },
+                  "redisCacheManagedIdentityName": {
+                    "value": "[variables('batchManagedIdentity')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.10.61.36676",
+                      "templateHash": "4170915069924508700"
+                    }
+                  },
+                  "parameters": {
+                    "redisCacheName": {
+                      "type": "string"
+                    },
+                    "location": {
+                      "type": "string",
+                      "defaultValue": "[resourceGroup().location]"
+                    },
+                    "kvName": {
+                      "type": "string"
+                    },
+                    "redisCacheSKU": {
+                      "type": "string",
+                      "defaultValue": "Standard",
+                      "allowedValues": [
+                        "Basic",
+                        "Standard",
+                        "Premium"
+                      ],
+                      "metadata": {
+                        "description": "Specify the pricing tier of the new Azure Redis Cache."
+                      }
+                    },
+                    "redisCacheFamily": {
+                      "type": "string",
+                      "defaultValue": "C",
+                      "allowedValues": [
+                        "C",
+                        "P"
+                      ]
+                    },
+                    "redisCacheCapacity": {
+                      "type": "int",
+                      "defaultValue": 1,
+                      "allowedValues": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                      ],
+                      "metadata": {
+                        "description": "Specify the size of the new Azure Redis Cache instance. Valid values: for C (Basic/Standard) family (0, 1, 2, 3, 4, 5, 6), for P (Premium) family (1, 2, 3, 4)"
+                      }
+                    },
+                    "tags": {
+                      "type": "object"
+                    },
+                    "privateEndpointSubnetId": {
+                      "type": "string",
+                      "defaultValue": "",
+                      "metadata": {
+                        "description": "subnet id for private endpoint, if any"
+                      }
+                    },
+                    "privateLinkGroupIds": {
+                      "type": "array",
+                      "defaultValue": [
+                        "redisCache"
+                      ]
+                    },
+                    "rgHub": {
+                      "type": "string",
+                      "defaultValue": ""
+                    },
+                    "redisCacheManagedIdentityName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "User Assigned Managed Identity Name"
+                      }
+                    }
+                  },
+                  "variables": {
+                    "keys": [
+                      "azfinsim-cache-key",
+                      "azfinsim-cache-name",
+                      "azfinsim-cache-ssl"
+                    ],
+                    "privateDnsZoneName": "privatelink.redis.cache.windows.net"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Cache/redis",
+                      "apiVersion": "2022-05-01",
+                      "name": "[parameters('redisCacheName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "identity": {
+                        "type": "UserAssigned",
+                        "userAssignedIdentities": {
+                          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('redisCacheManagedIdentityName')))]": {}
+                        }
+                      },
+                      "properties": {
+                        "sku": {
+                          "name": "[parameters('redisCacheSKU')]",
+                          "family": "[parameters('redisCacheFamily')]",
+                          "capacity": "[parameters('redisCacheCapacity')]"
+                        },
+                        "enableNonSslPort": true,
+                        "minimumTlsVersion": "1.2",
+                        "publicNetworkAccess": "Disabled"
+                      }
+                    },
+                    {
+                      "condition": "[not(equals(parameters('privateEndpointSubnetId'), ''))]",
+                      "type": "Microsoft.Network/privateEndpoints",
+                      "apiVersion": "2022-01-01",
+                      "name": "[format('{0}-pl', parameters('redisCacheName'))]",
+                      "tags": "[parameters('tags')]",
+                      "location": "[parameters('location')]",
+                      "properties": {
+                        "subnet": {
+                          "id": "[parameters('privateEndpointSubnetId')]"
+                        },
+                        "privateLinkServiceConnections": [
+                          {
+                            "name": "[format('{0}-pl', parameters('redisCacheName'))]",
+                            "properties": {
+                              "privateLinkServiceId": "[resourceId('Microsoft.Cache/redis', parameters('redisCacheName'))]",
+                              "groupIds": "[parameters('privateLinkGroupIds')]"
+                            }
+                          }
+                        ]
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Cache/redis', parameters('redisCacheName'))]"
+                      ]
+                    },
+                    {
+                      "condition": "[not(equals(parameters('kvName'), ''))]",
+                      "copy": {
+                        "name": "asecret",
+                        "count": "[length(variables('keys'))]"
+                      },
+                      "type": "Microsoft.KeyVault/vaults/secrets",
+                      "apiVersion": "2022-07-01",
+                      "name": "[format('{0}/{1}', parameters('kvName'), variables('keys')[copyIndex()])]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "value": "[createObject('azfinsim-cache-key', listKeys(resourceId('Microsoft.Cache/redis', parameters('redisCacheName')), '2022-05-01').primaryKey, 'azfinsim-cache-name', reference(resourceId('Microsoft.Cache/redis', parameters('redisCacheName'))).hostName, 'azfinsim-cache-port', '6380', 'azfinsim-cache-ssl', 'yes')[variables('keys')[copyIndex()]]]"
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Cache/redis', parameters('redisCacheName'))]"
+                      ]
+                    },
+                    {
+                      "condition": "[not(equals(parameters('privateEndpointSubnetId'), ''))]",
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2020-10-01",
+                      "name": "[format('deployEndpointAEntry-{0}', parameters('redisCacheName'))]",
+                      "resourceGroup": "[parameters('rgHub')]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "ipAddress": {
+                            "value": "[reference(resourceId('Microsoft.Network/privateEndpoints', format('{0}-pl', parameters('redisCacheName'))), '2022-01-01').customDnsConfigs[0].ipAddresses[0]]"
+                          },
+                          "privateDnsZoneName": {
+                            "value": "[variables('privateDnsZoneName')]"
+                          },
+                          "serviceName": {
+                            "value": "[parameters('redisCacheName')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.10.61.36676",
+                              "templateHash": "13254199335564405154"
+                            }
+                          },
+                          "parameters": {
+                            "privateDnsZoneName": {
+                              "type": "string"
+                            },
+                            "serviceName": {
+                              "type": "string"
+                            },
+                            "ipAddress": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Network/privateDnsZones/A",
+                              "apiVersion": "2020-06-01",
+                              "name": "[format('{0}/{1}', parameters('privateDnsZoneName'), parameters('serviceName'))]",
+                              "properties": {
+                                "ttl": 3600,
+                                "aRecords": [
+                                  {
+                                    "ipv4Address": "[parameters('ipAddress')]"
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Network/privateEndpoints', format('{0}-pl', parameters('redisCacheName')))]",
+                        "[resourceId('Microsoft.Cache/redis', parameters('redisCacheName'))]"
+                      ]
+                    }
+                  ],
+                  "outputs": {
+                    "privateEndpointIP": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.Network/privateEndpoints', format('{0}-pl', parameters('redisCacheName'))), '2022-01-01').customDnsConfigs[0].ipAddresses[0]]"
+                    },
+                    "privateEndpointFQDN": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.Network/privateEndpoints', format('{0}-pl', parameters('redisCacheName'))), '2022-01-01').customDnsConfigs[0].fqdn]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('batchManagedIdentity'))]",
+                "[resourceId('Microsoft.Resources/deployments', format('dpl-{0}-batchKV-Policy-MI-add', uniqueString(deployment().name, parameters('location'))))]"
               ]
             },
             {
@@ -7238,7 +7529,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.10.61.36676",
-                      "templateHash": "5846562035348909417"
+                      "templateHash": "12225235505426699666"
                     }
                   },
                   "parameters": {
@@ -7302,6 +7593,10 @@
                     "scriptLogs": {
                       "type": "string",
                       "value": "[reference(format('{0}/logs/default', resourceId('Microsoft.Resources/deploymentScripts', 'deployTestContainerToACR')), '2019-10-01-preview', 'Full').properties.log]"
+                    },
+                    "fullImageName": {
+                      "type": "string",
+                      "value": "[format('{0}.azurecr.io/{1}:latest', parameters('acrName'), parameters('acrImageName'))]"
                     }
                   }
                 }
@@ -7312,7 +7607,6 @@
               ]
             },
             {
-              "condition": "[false()]",
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2020-10-01",
               "name": "[format('dpl-{0}-batchAccount', uniqueString(deployment().name, parameters('location')))]",
@@ -7534,7 +7828,6 @@
               ]
             },
             {
-              "condition": "[false()]",
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2020-10-01",
               "name": "[format('dpl-{0}-batchPool-main', uniqueString(deployment().name, parameters('location')))]",
@@ -7967,7 +8260,21 @@
                 "[resourceId('Microsoft.Resources/deployments', format('dpl-{0}-batchAccount', uniqueString(deployment().name, parameters('location'))))]"
               ]
             }
-          ]
+          ],
+          "outputs": {
+            "managedIdentityName": {
+              "type": "string",
+              "value": "[variables('batchManagedIdentity')]"
+            },
+            "managedIdentityClientId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('batchManagedIdentity'))).clientId]"
+            },
+            "kvName": {
+              "type": "string",
+              "value": "[variables('kvName')]"
+            }
+          }
         }
       },
       "dependsOn": [
@@ -7994,7 +8301,23 @@
             "value": "[variables('vmObjectJumpboxWindows')]"
           },
           "vmObjectJumpbox": {
-            "value": "[variables('vmObjectJumpbox')]"
+            "value": {
+              "nicName": "nic-jumpbox-linux-",
+              "vmName": "vm-jumpbox-linux-",
+              "vmSize": "[parameters('jumpboxLinuxVmSize')]",
+              "osProfile": {
+                "computerName": "LinuxJumpbox",
+                "adminUserName": "[parameters('adminUserName')]",
+                "adminPassword": "[parameters('adminPassword')]",
+                "customData": "[base64(format(variables('linuxVmInitScriptRaw'), variables('saNameStorageNFS'), 'container', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgAzureBatch')), 'Microsoft.Resources/deployments', format('dpl-{0}-azBatchSecured', uniqueString(deployment().name, deployment().location)))).outputs.kvName.value, reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgAzureBatch')), 'Microsoft.Resources/deployments', format('dpl-{0}-azBatchSecured', uniqueString(deployment().name, deployment().location)))).outputs.managedIdentityClientId.value))]"
+              },
+              "imageReference": {
+                "publisher": "canonical",
+                "offer": "0001-com-ubuntu-server-focal",
+                "sku": "20_04-lts-gen2",
+                "version": "latest"
+              }
+            }
           },
           "vNetHubObject": {
             "value": "[variables('vNetHubObject')]"
@@ -8007,6 +8330,12 @@
           },
           "tags": {
             "value": "[variables('resourceTags')]"
+          },
+          "managedIdentityName": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgAzureBatch')), 'Microsoft.Resources/deployments', format('dpl-{0}-azBatchSecured', uniqueString(deployment().name, deployment().location)))).outputs.managedIdentityName.value]"
+          },
+          "rgManagedIdentity": {
+            "value": "[variables('rgAzureBatch')]"
           }
         },
         "template": {
@@ -8016,7 +8345,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.10.61.36676",
-              "templateHash": "13285058694094005314"
+              "templateHash": "5904498050447877239"
             }
           },
           "parameters": {
@@ -8041,6 +8370,12 @@
             "tags": {
               "type": "object",
               "defaultValue": {}
+            },
+            "managedIdentityName": {
+              "type": "string"
+            },
+            "rgManagedIdentity": {
+              "type": "string"
             }
           },
           "resources": [
@@ -8062,6 +8397,12 @@
                   },
                   "tags": {
                     "value": "[parameters('tags')]"
+                  },
+                  "managedIdentityName": {
+                    "value": "[parameters('managedIdentityName')]"
+                  },
+                  "rgManagedIdentity": {
+                    "value": "[parameters('rgManagedIdentity')]"
                   }
                 },
                 "template": {
@@ -8071,7 +8412,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.10.61.36676",
-                      "templateHash": "13643951747345780148"
+                      "templateHash": "16645174332067413867"
                     }
                   },
                   "parameters": {
@@ -8088,6 +8429,12 @@
                     "tags": {
                       "type": "object",
                       "defaultValue": {}
+                    },
+                    "managedIdentityName": {
+                      "type": "string"
+                    },
+                    "rgManagedIdentity": {
+                      "type": "string"
                     }
                   },
                   "resources": [
@@ -8124,6 +8471,12 @@
                       "apiVersion": "2019-07-01",
                       "name": "[format('{0}{1}', parameters('vmObject').vmName, add(range(0, parameters('vmCount'))[copyIndex()], 1))]",
                       "location": "[resourceGroup().location]",
+                      "identity": {
+                        "type": "UserAssigned",
+                        "userAssignedIdentities": {
+                          "[format('{0}', extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('rgManagedIdentity')), 'Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')))]": {}
+                        }
+                      },
                       "tags": "[parameters('tags')]",
                       "properties": {
                         "hardwareProfile": {
@@ -8185,6 +8538,12 @@
                   },
                   "tags": {
                     "value": "[parameters('tags')]"
+                  },
+                  "managedIdentityName": {
+                    "value": "[parameters('managedIdentityName')]"
+                  },
+                  "rgManagedIdentity": {
+                    "value": "[parameters('rgManagedIdentity')]"
                   }
                 },
                 "template": {
@@ -8194,7 +8553,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.10.61.36676",
-                      "templateHash": "13643951747345780148"
+                      "templateHash": "16645174332067413867"
                     }
                   },
                   "parameters": {
@@ -8211,6 +8570,12 @@
                     "tags": {
                       "type": "object",
                       "defaultValue": {}
+                    },
+                    "managedIdentityName": {
+                      "type": "string"
+                    },
+                    "rgManagedIdentity": {
+                      "type": "string"
                     }
                   },
                   "resources": [
@@ -8247,6 +8612,12 @@
                       "apiVersion": "2019-07-01",
                       "name": "[format('{0}{1}', parameters('vmObject').vmName, add(range(0, parameters('vmCount'))[copyIndex()], 1))]",
                       "location": "[resourceGroup().location]",
+                      "identity": {
+                        "type": "UserAssigned",
+                        "userAssignedIdentities": {
+                          "[format('{0}', extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('rgManagedIdentity')), 'Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')))]": {}
+                        }
+                      },
                       "tags": "[parameters('tags')]",
                       "properties": {
                         "hardwareProfile": {

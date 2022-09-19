@@ -7,7 +7,7 @@ echo "Script triggered by cloud-init process"
 
 apt update
 apt upgrade -y
-apt install curl nfs-common jq -y
+apt install curl nfs-common jq python3-pip -y
 
 # Install latest Azure CLI
 curl -sL https://aka.ms/InstallAzureCLIDeb | bash
@@ -18,3 +18,5 @@ mkdir -p /mnt/share
 
 mount -o sec=sys,vers=3,nolock,proto=tcp {0}.blob.core.windows.net:/{0}/{1}  /mnt/share
 
+# AzFinSim setup
+git clone https://github.com/utkarshayachit/azfinsim /azfinsim

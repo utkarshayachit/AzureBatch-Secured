@@ -40,3 +40,4 @@ resource deploymentScript 'Microsoft.Resources/deploymentScripts@2019-10-01-prev
 
 // print logs from script after template is finished deploying
 output scriptLogs string = reference('${deploymentScript.id}/logs/default', deploymentScript.apiVersion, 'Full').properties.log
+output fullImageName string = '${acrName}.azurecr.io/${acrImageName}:latest'

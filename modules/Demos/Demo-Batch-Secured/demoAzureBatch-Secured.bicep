@@ -184,29 +184,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-06-01-preview' existing = {
   name: kvName
 }
 
-resource asecret0 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'azfinsim-appinsights-key'
-  tags: tags
-  properties: {
-    value: appInsightsInstrumentKey
-  }
-  dependsOn: [
-    deployAzBatchKV
-  ]
-}
-
-resource asecret1 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'azfinsim-appinsights-app-id'
-  tags: tags
-  properties: {
-    value: appInsightsAppId
-  }
-  dependsOn: [
-    deployAzBatchKV
-  ]
-}
 
 // Create required storage accounts
 //------------------------------------------------------------------------
@@ -413,3 +390,31 @@ module deployBatchPool '../../../modules/azBatch/azBatchPool.bicep' = {
     deployAzureBatchAccount
   ]
 }
+
+//------------------------------------------------------
+// store azfinsim secrets in KV
+var keys = [
+  'appinsights-key'
+  'appinsights-app-id'
+  'batch-endpoint'
+  'task-acr-image'
+]
+
+var secrets = {
+  'appinsights-key': appInsightsInstrumentKey
+  'appinsights-app-id': appInsightsAppId
+  'batch-endpoint': deployAzureBatchAccount.outputs.privateEndpointFqdn
+  'task-acr-image': deployCheckKVImage.outputs.fullImageName
+}
+
+resource secretResources 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = [for key in keys: {
+  parent: keyVault
+  name: 'azfinsim-${key}'
+  tags: tags
+  properties: {
+    value: secrets[key]
+  }
+  dependsOn: [
+    deployAzBatchKV
+  ]
+}]

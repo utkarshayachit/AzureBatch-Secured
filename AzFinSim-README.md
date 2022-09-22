@@ -209,3 +209,68 @@ the linux jumpobox as follows:
 ```
 
 - Delete all resource groups named `rg-dev-<prefix>` using the Azure Portal.
+
+
+## Business Use-Case
+
+This demo runs an application that models a typical Fintech Risk Simulation. The
+application is a modifed version of the [AzFinSim example application](https://github.com/mkiernan/azfinsim).
+The demo creates 1 million synthetic trades, inject them into a Redis cache and process
+them with containerized application code on Azure Batch, capturing Telemetry in Application Insights.
+
+AzFinSim is a reference implementation for automated (terraform) deployment of containerized Azure Batch applications which scales to 10's of thousands of cores. While the application provided is a synthetic risk simulation designed to demonstrate high throughput in a financial risk/grid scenario, the actual framework is generic enough to be applied to any embarrassingly parallel / high-throughput computing style scenario. If you have a large scale computing challenge to solve, deploying this example is a good place to start, and once running it's easy enough to insert your own code and libraries in place of azfinsim.
+
+## Infrastucture Overview
+
+The deployment demonstrates how Azure Batch could be deploye dina secured environment,
+which is often a requirement in regulated industries such as Pharma, Life Sciences, or Banking
+and Captial Markets. 
+
+![Overview](./images/batch-private-cluster.png)
+**^----NEEDS TO BE UPDATED TO INCLUDE REDIS**
+
+## Short summary of the deployment:
+
+Currently, the following resources are deployed to your Azure Subscription:
+
+- Azure Batch will be deployed in User-Subscription mode 
+- Azure Batch Service will be deployed in a private endpoint configuration
+- All other services will be exposes through private endpoints. For instance:
+  - Storage (Blob, NFS Share, SMB Share)
+  - Azure Key Vault
+  - Azure Container Registry
+- No puplic IPs are exposed on the pool nodes (thus any outgoing traffic will be
+  routed through the Azure Firewall)
+- The Azure Batch Pool will be deplyed with a Managed Identity which has the
+  permissions to pull images from the Azure Container Registry
+
+- In total, 3 pools will be deployed in individual subnets:
+  - linux-dev-pool (Static Scaling,Azure Container Registry configured, NFS Share mounted)
+  - linux-prod-pool (Auto Scaling enabled, Azure Container Registry configured,
+    NFS Share mounted, connection to the nodes via ssh not allowed)
+  - windows-dev-pool (Static Scaling, SMB Share mouted, Pyhton installed on nodes)
+
+- A VPN Gateway will be deployed as part of the end-to-end example, if enabled
+
+- Azure Bastion Service will be deployed to allow access to the Linux and Windows
+  Jumpboxes if a VPN Gateway is not desired.
+
+- An Azure Firewall will be deployed and all internet bound traffic will be
+ routed through Route Tables to the Azure Firewall. Rules are configured to allow Linux & Windows Updates and package retrieval.
+
+- During the deployment a docker container will be created with the AzFinSim app
+  and pushed to the secured ACR. The app uses managed identity created during deployment
+  to access the key vault to fetch secrets such as redis cache url, port, access-key etc.
+  The MI has RBAC permissions assingned on the Key Vault.
+
+- The Windows Jumpbox will have the following software preinstalled: 
+  - Azure Batch Explorer
+  - Azure Storage Explorer
+  - Azure CLI
+
+- The Linux Jumpbox will have the following additonal packages preinstalled:
+  - azure-cli 
+  - nfs-common 
+  - jq 
+  - will mount the blob storage (mounted through NFS 3)
+  - azfinsim scripts to inject/generate data and submit jobs

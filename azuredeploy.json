@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.10.61.36676",
-      "templateHash": "14460746085404774064"
+      "templateHash": "4854500307244162298"
     }
   },
   "parameters": {
@@ -140,13 +140,6 @@
       "defaultValue": "f520d84c-3fd3-4cc8-88d4-2ed25b00d27a",
       "metadata": {
         "description": "Get the Batch Service Object Id: az ad sp show --id \"MicrosoftAzureBatch\" --query id -o tsv"
-      }
-    },
-    "assignBatchServiceRoles": {
-      "type": "bool",
-      "defaultValue": false,
-      "metadata": {
-        "description": "Select true if Batch Service has not been granted contributor permissions."
       }
     },
     "batchNodeSku": {
@@ -4663,9 +4656,6 @@
           "batchServiceObjectId": {
             "value": "[parameters('batchServiceObjectId')]"
           },
-          "assignBatchServiceRoles": {
-            "value": "[parameters('assignBatchServiceRoles')]"
-          },
           "batchNodeSku": {
             "value": "[parameters('batchNodeSku')]"
           },
@@ -4686,7 +4676,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.10.61.36676",
-              "templateHash": "1312772148352736665"
+              "templateHash": "6095427883591482152"
             }
           },
           "parameters": {
@@ -4748,9 +4738,6 @@
             },
             "batchServiceObjectId": {
               "type": "string"
-            },
-            "assignBatchServiceRoles": {
-              "type": "bool"
             },
             "batchAccountName": {
               "type": "string"
@@ -4825,7 +4812,191 @@
               ]
             },
             {
-              "condition": "[parameters('assignBatchServiceRoles')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2020-10-01",
+              "name": "[format('dpl-{0}-testBatchRoleAssignment', uniqueString(deployment().name, parameters('location')))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "principalId": {
+                    "value": "[parameters('batchServiceObjectId')]"
+                  },
+                  "roleDefinitionName": {
+                    "value": "Contributor"
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.10.61.36676",
+                      "templateHash": "9155260694845748281"
+                    }
+                  },
+                  "parameters": {
+                    "principalId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "the principal id to check for the role assignment"
+                      }
+                    },
+                    "roleDefinitionName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "built-in role definition id"
+                      }
+                    },
+                    "location": {
+                      "type": "string",
+                      "defaultValue": "[resourceGroup().location]",
+                      "metadata": {
+                        "description": "location where the deployment script will be executed"
+                      }
+                    },
+                    "currentTime": {
+                      "type": "string",
+                      "defaultValue": "[utcNow()]"
+                    }
+                  },
+                  "variables": {
+                    "query": "[format('[?principalId==''{0}'' && roleDefinitionName==''{1}''].{{name:name}}', parameters('principalId'), parameters('roleDefinitionName'))]",
+                    "scriptContent": "[format('az login -i > /dev/null 2>&1 && az role assignment list --scope {0} -o json --query \"{1}\"', subscription().id, variables('query'))]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+                      "apiVersion": "2022-01-31-preview",
+                      "name": "[uniqueString(parameters('principalId'), subscription().id, parameters('roleDefinitionName'))]",
+                      "location": "[parameters('location')]"
+                    },
+                    {
+                      "type": "Microsoft.Resources/deploymentScripts",
+                      "apiVersion": "2020-10-01",
+                      "name": "testRoleAssignment",
+                      "location": "[parameters('location')]",
+                      "kind": "AzureCLI",
+                      "identity": {
+                        "type": "UserAssigned",
+                        "userAssignedIdentities": {
+                          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', uniqueString(parameters('principalId'), subscription().id, parameters('roleDefinitionName'))))]": {}
+                        }
+                      },
+                      "properties": {
+                        "azCliVersion": "2.39.0",
+                        "retentionInterval": "P1D",
+                        "scriptContent": "[format('{0} 2>&1 | jq -c ''{{\"count\": . | length }}'' | tee $AZ_SCRIPTS_OUTPUT_PATH', variables('scriptContent'))]",
+                        "cleanupPreference": "OnSuccess",
+                        "forceUpdateTag": "[parameters('currentTime')]"
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', uniqueString(parameters('principalId'), subscription().id, parameters('roleDefinitionName')))]"
+                      ]
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2020-10-01",
+                      "name": "dpl-miRoleAssignment",
+                      "subscriptionId": "[subscription().subscriptionId]",
+                      "location": "[resourceGroup().location]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "builtInRoleType": {
+                            "value": "Reader"
+                          },
+                          "principalId": {
+                            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', uniqueString(parameters('principalId'), subscription().id, parameters('roleDefinitionName')))).principalId]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.10.61.36676",
+                              "templateHash": "6252404450429376199"
+                            }
+                          },
+                          "parameters": {
+                            "principalId": {
+                              "type": "string"
+                            },
+                            "builtInRoleType": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "Built-in role to assign"
+                              },
+                              "allowedValues": [
+                                "Owner",
+                                "Contributor",
+                                "Reader"
+                              ]
+                            },
+                            "roleNameGuid": {
+                              "type": "string",
+                              "defaultValue": "[guid(parameters('principalId'), parameters('builtInRoleType'), subscription().displayName)]",
+                              "metadata": {
+                                "description": "A new GUID used to identify the role assignment"
+                              }
+                            },
+                            "principalType": {
+                              "type": "string",
+                              "defaultValue": "ServicePrincipal"
+                            },
+                            "roleAssignmentExists": {
+                              "type": "bool",
+                              "defaultValue": false
+                            }
+                          },
+                          "variables": {
+                            "role": {
+                              "Owner": "[format('/subscriptions/{0}/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635', subscription().subscriptionId)]",
+                              "Contributor": "[format('/subscriptions/{0}/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c', subscription().subscriptionId)]",
+                              "Reader": "[format('/subscriptions/{0}/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7', subscription().subscriptionId)]"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "condition": "[not(parameters('roleAssignmentExists'))]",
+                              "type": "Microsoft.Authorization/roleAssignments",
+                              "apiVersion": "2020-04-01-preview",
+                              "name": "[parameters('roleNameGuid')]",
+                              "properties": {
+                                "roleDefinitionId": "[variables('role')[parameters('builtInRoleType')]]",
+                                "principalId": "[parameters('principalId')]",
+                                "principalType": "[parameters('principalType')]"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', uniqueString(parameters('principalId'), subscription().id, parameters('roleDefinitionName')))]"
+                      ]
+                    }
+                  ],
+                  "outputs": {
+                    "result": {
+                      "type": "bool",
+                      "value": "[if(greater(reference(resourceId('Microsoft.Resources/deploymentScripts', 'testRoleAssignment')).outputs.count, 0), true(), false())]"
+                    }
+                  }
+                }
+              }
+            },
+            {
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2020-10-01",
               "name": "[format('dpl-{0}-batchRoleAssignment', uniqueString(deployment().name, parameters('location')))]",
@@ -4842,6 +5013,9 @@
                   },
                   "principalId": {
                     "value": "[parameters('batchServiceObjectId')]"
+                  },
+                  "roleAssignmentExists": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('dpl-{0}-testBatchRoleAssignment', uniqueString(deployment().name, parameters('location'))))).outputs.result.value]"
                   }
                 },
                 "template": {
@@ -4851,7 +5025,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.10.61.36676",
-                      "templateHash": "3473558522415643054"
+                      "templateHash": "6252404450429376199"
                     }
                   },
                   "parameters": {
@@ -4875,6 +5049,14 @@
                       "metadata": {
                         "description": "A new GUID used to identify the role assignment"
                       }
+                    },
+                    "principalType": {
+                      "type": "string",
+                      "defaultValue": "ServicePrincipal"
+                    },
+                    "roleAssignmentExists": {
+                      "type": "bool",
+                      "defaultValue": false
                     }
                   },
                   "variables": {
@@ -4886,17 +5068,22 @@
                   },
                   "resources": [
                     {
+                      "condition": "[not(parameters('roleAssignmentExists'))]",
                       "type": "Microsoft.Authorization/roleAssignments",
                       "apiVersion": "2020-04-01-preview",
                       "name": "[parameters('roleNameGuid')]",
                       "properties": {
                         "roleDefinitionId": "[variables('role')[parameters('builtInRoleType')]]",
-                        "principalId": "[parameters('principalId')]"
+                        "principalId": "[parameters('principalId')]",
+                        "principalType": "[parameters('principalType')]"
                       }
                     }
                   ]
                 }
-              }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', format('dpl-{0}-testBatchRoleAssignment', uniqueString(deployment().name, parameters('location'))))]"
+              ]
             },
             {
               "type": "Microsoft.Resources/deployments",

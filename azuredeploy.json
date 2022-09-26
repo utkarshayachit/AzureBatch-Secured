@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.10.61.36676",
-      "templateHash": "4854500307244162298"
+      "templateHash": "127355266325489508"
     }
   },
   "parameters": {
@@ -4676,7 +4676,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.10.61.36676",
-              "templateHash": "6095427883591482152"
+              "templateHash": "3162672669864919445"
             }
           },
           "parameters": {
@@ -4838,7 +4838,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.10.61.36676",
-                      "templateHash": "9155260694845748281"
+                      "templateHash": "7236421485609281248"
                     }
                   },
                   "parameters": {
@@ -4903,7 +4903,7 @@
                     {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2020-10-01",
-                      "name": "dpl-miRoleAssignment",
+                      "name": "[format('dpl-{0}-miRoleAssignment', uniqueString(deployment().name, parameters('location')))]",
                       "subscriptionId": "[subscription().subscriptionId]",
                       "location": "[resourceGroup().location]",
                       "properties": {

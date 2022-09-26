@@ -25,7 +25,7 @@ resource mi 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview
 
 module mdlRoleAssignment 'roleAssignmentSubscription.bicep' = {
   scope: subscription()
-  name: 'dpl-miRoleAssignment'
+  name: 'dpl-${uniqueString(deployment().name, location)}-miRoleAssignment'
   params: {
     builtInRoleType: 'Reader'
     principalId: mi.properties.principalId

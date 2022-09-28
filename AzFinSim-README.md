@@ -1,3 +1,28 @@
+# AzFinSim on secured Azure Batch enviroment
+
+- [AzFinSim on secured Azure Batch enviroment](#azfinsim-on-secured-azure-batch-enviroment)
+  - [Prerequistes](#prerequistes)
+  - [Deployment](#deployment)
+  - [Monitoring](#monitoring)
+  - [Executing the use-case](#executing-the-use-case)
+    - [Populating the redis cache](#populating-the-redis-cache)
+    - [Submitting jobs](#submitting-jobs)
+    - [Resizing pool](#resizing-pool)
+    - [Cleanup](#cleanup)
+  - [Business Use-Case](#business-use-case)
+  - [Infrastucture Overview](#infrastucture-overview)
+  - [Short summary of the deployment:](#short-summary-of-the-deployment)
+
+## Prerequistes
+
+**Accept legal terms**: In user subscription mode, you need to accept the legal
+terms for the image before using the subscription. To accept these legal terms,
+run the commands `Get-AzMarketplaceTerms` and `Set-AzMarketplaceTerms` in PowerShell.
+You can do this using the Azure CLI shell in the Azure portal.
+
+```ps
+Get-AzMarketplaceTerms -Publisher 'microsoft-azure-batch' -Product 'ubuntu-server-container' -Name '20-04-lts' | Set-AzMarketplaceTerms -Accept
+```
 
 ## Deployment
 
@@ -7,6 +32,7 @@ To deploy, you can use Azure CLI tools installed on your local machine or click
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Futkarshayachit%2FAzureBatch-Secured%2Fazfinsim%2Fazuredeploy.json)
 
 Using CLI, one can use the following form:
+
 ```sh
 #-- login to CLI
 az login
@@ -81,8 +107,9 @@ To view it, do the following:
   **Search**, search of Batch Explorer and launch the app again that way
   (don't use the desktop icon).
 - Login to Azure using your credentials.
-- The backaccount of interest is named `badev<prefix>01`. Select that and then you
-  can inspect the pools etc.
+- The batch account of interest is named `badev<prefix>01`. Select that and then you
+  can inspect the pools etc. by  clicking on corresponding icons on the vertical-left
+  toolbar.
 
 ## Executing the use-case
 
@@ -148,7 +175,7 @@ sys0m0.741s
 You can view the redis cache's memory usage go up as we populate it by navigating
 to the *Insights* tab on the `dev<prefix>redis` resource under the `rg-dev-<prefix>` resource group.
 
-## Submitting jobs
+### Submitting jobs
 
 You can submit jobs using the `submit.sh`. By default it only submits 1 job with 10 tasks. Edit the file
 to uncomment some larger runs.
@@ -189,7 +216,7 @@ re 0.0"
 
 If you navigate to the **Batch Explorer** in the Windows jumbox, you'll see a new job with tasks has been added to the `linux-dev-pool`.
 
-## Resizing pool
+### Resizing pool
 
 By default, the `linux-dev-pool` has no nodes allocated to it. You can resize it using either **Batch Explorer** or from
 the linux jumpobox as follows:
@@ -199,7 +226,7 @@ the linux jumpobox as follows:
 /azfinsim/scripts/resize_pool.sh 10
 ```
 
-## Cleanup
+### Cleanup
 
 - Resize the pool down to 0
   
@@ -209,7 +236,6 @@ the linux jumpobox as follows:
 ```
 
 - Delete all resource groups named `rg-dev-<prefix>` using the Azure Portal.
-
 
 ## Business Use-Case
 

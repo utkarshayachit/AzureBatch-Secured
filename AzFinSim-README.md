@@ -226,8 +226,7 @@ The deployment demonstrates how Azure Batch could be deploye dina secured enviro
 which is often a requirement in regulated industries such as Pharma, Life Sciences, or Banking
 and Captial Markets. 
 
-![Overview](./images/batch-private-cluster.png)
-**^----NEEDS TO BE UPDATED TO INCLUDE REDIS**
+![Overview](./images/batch-private-cluster-redis.png)
 
 ## Short summary of the deployment:
 

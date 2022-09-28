@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.10.61.36676",
-      "templateHash": "127355266325489508"
+      "templateHash": "13534707940137236430"
     }
   },
   "parameters": {
@@ -1628,7 +1628,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.10.61.36676",
-              "templateHash": "8470180889693258761"
+              "templateHash": "13084820869969090955"
             }
           },
           "parameters": {
@@ -3717,7 +3717,7 @@
               },
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2020-10-01",
-              "name": "[format('dpl-{0}-dnsZone-{1}', uniqueString(deployment().name, deployment().location), parameters('privateDnsZoneNames')[copyIndex()])]",
+              "name": "[format('dpl-{0}-dnsZone-{1}', uniqueString(deployment().name, deployment().location), uniqueString(parameters('privateDnsZoneNames')[copyIndex()]))]",
               "resourceGroup": "[parameters('rgHub')]",
               "properties": {
                 "expressionEvaluationOptions": {

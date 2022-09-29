@@ -15,13 +15,20 @@
 
 ## Prerequistes
 
-**Accept legal terms**: In user subscription mode, you need to accept the legal
-terms for the image before using the subscription. To accept these legal terms,
-run the commands `Get-AzMarketplaceTerms` and `Set-AzMarketplaceTerms` in PowerShell.
-You can do this using the Azure CLI shell in the Azure portal.
+**Accept legal terms**: This example uses batch pools in user subscription mode. For that
+you need to accept the legal terms for the container image we use.
+To accept these legal terms,
+you need to execute the following Azure CLI command once. You can do this using
+the [Azure Cloud Shell](https://ms.portal.azure.com/#cloudshell/) in the Azure portal
+or your local computer. To run these commands on your local computer, you must have
+[Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) installed.
 
-```ps
-Get-AzMarketplaceTerms -Publisher 'microsoft-azure-batch' -Product 'ubuntu-server-container' -Name '20-04-lts' | Set-AzMarketplaceTerms -Accept
+```sh
+# use az login if running locally; not needed for Azure cloud shell.
+az login
+
+# accept image terms
+az vm image terms accept --urn microsoft-azure-batch:ubuntu-server-container:20-04-lts:latest
 ```
 
 ## Deployment

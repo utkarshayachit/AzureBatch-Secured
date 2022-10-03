@@ -41,6 +41,8 @@ To deploy, you can use Azure CLI tools installed on your local machine or click
 Using CLI, one can use the following form:
 
 ```sh
+# note: these have been tested on WSL2 bash shell.
+
 #-- login to CLI
 az login
 
@@ -70,6 +72,9 @@ AZFS_DEPLOYMENT_CREATOR=yourname
 # automatically.
 AZFS_PREFIX=some-small-uniq-string
 
+# The id for Azure Batch service principal
+AZFS_BATCH_OBJECTID=`az ad sp list --display-name "Microsoft Azure Batch" --filter "displayName eq 'Microsoft Azure Batch'" | jq -r '.[].id'`
+
 az deployment sub create                  \
   --name $AZFS_DEPLOYMENT_NAME            \
   --location $AZFS_LOCATION               \
@@ -77,7 +82,8 @@ az deployment sub create                  \
   --parameters                            \
     resourceGroupLocation=$AZFS_LOCATION  \
     owner=$AZFS_DEPLOYMENT_CREATOR        \
-    prefix=$AZFS_PREFIX
+    prefix=$AZFS_PREFIX                   \
+    batchServiceObjectId=$AZFS_BATCH_OBJECTID
 ```
 
 On success you'll be asked to enter a password to use to login to the jumbox VMs.

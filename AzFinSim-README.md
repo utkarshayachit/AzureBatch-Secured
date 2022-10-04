@@ -58,8 +58,6 @@ To deploy, you can use Azure CLI tools installed on your local machine or click
 Using CLI, one can use the following form:
 
 ```sh
-# note: these have been tested on WSL2 bash shell.
-
 #-- login to CLI
 az login
 
@@ -90,6 +88,9 @@ AZFS_DEPLOYMENT_CREATOR=yourname
 AZFS_PREFIX=some-small-uniq-string
 
 # The id for Azure Batch service principal
+# This only works on Linux Bash shell with `jq` intalled. You can also simply set this to the value
+# returned by executing the same command in the Azure Clould Shell as described
+# in the prerequisites.
 AZFS_BATCH_OBJECTID=`az ad sp list --display-name "Microsoft Azure Batch" --filter "displayName eq 'Microsoft Azure Batch'" | jq -r '.[].id'`
 
 az deployment sub create                  \
@@ -164,7 +165,10 @@ pip3 install -r /azfinsim/src/requirements.txt
 We have two options to populate the cache.
 
 ```sh
-# option 1: generates trades and pushes them. SLOW!
+#----------------------------------------------------------------
+# *** OPTION 1 ***: generates trades and pushes them. ===SLOW!===
+#----------------------------------------------------------------
+
 /azfinsim/scripts/generator.sh 
 # here's the output
 Generating synthetic trades
@@ -186,7 +190,10 @@ Incomplete environment configuration. These variables are set: AZURE_CLIENT_ID
 [2022-09-19 22:14:42] [PID=2400]Executing batch: 30000-40000
 [2022-09-19 22:14:42] [PID=2400]Generating batch: 40000-49999
 
-#option 2: populates with pregenerated trades. FASTER!
+#--------------------------------------------------------------------
+# *** OPTION 2 ***: populates with pregenerated trades. ===FASTER!===
+#--------------------------------------------------------------------
+
 /azfinsim/scripts/inject.sh 
 # here's the output 
 Grabbing information about redis from key valut
@@ -211,7 +218,8 @@ You can submit jobs using the `submit.sh`. By default it only submits 1 job with
 to uncomment some larger runs.
 
 ```sh
- /azfinsim/scripts/submit.sh 
+/azfinsim/scripts/submit.sh 
+# here's the output
 Using AZFINSIM_KEYVAULT_NAME=kv-dev-uda0919-ba
 Incomplete environment configuration. These variables are set: AZURE_CLIENT_ID
 [2022-09-19 22:31:20] [PID=3951]Starting job PV_MonteCarlo10K-20220919-223120 in pool linux-dev-pool
@@ -274,13 +282,13 @@ application is a modifed version of the [AzFinSim example application](https://g
 The demo creates 1 million synthetic trades, inject them into a Redis cache and process
 them with containerized application code on Azure Batch, capturing Telemetry in Application Insights.
 
-AzFinSim is a reference implementation for automated (terraform) deployment of containerized Azure Batch applications which scales to 10's of thousands of cores. While the application provided is a synthetic risk simulation designed to demonstrate high throughput in a financial risk/grid scenario, the actual framework is generic enough to be applied to any embarrassingly parallel / high-throughput computing style scenario. If you have a large scale computing challenge to solve, deploying this example is a good place to start, and once running it's easy enough to insert your own code and libraries in place of azfinsim.
+AzFinSim is a reference implementation for automated (bicep) deployment of containerized Azure Batch applications which scales to 10's of thousands of cores. While the application provided is a synthetic risk simulation designed to demonstrate high throughput in a financial risk/grid scenario, the actual framework is generic enough to be applied to any embarrassingly parallel / high-throughput computing style scenario. If you have a large scale computing challenge to solve, deploying this example is a good place to start, and once running it's easy enough to insert your own code and libraries in place of azfinsim.
 
 ## Infrastucture Overview
 
-The deployment demonstrates how Azure Batch could be deploye dina secured environment,
+The deployment demonstrates how Azure Batch could be deployed in a secured environment,
 which is often a requirement in regulated industries such as Pharma, Life Sciences, or Banking
-and Captial Markets. 
+and Captial Markets.
 
 ![Overview](./images/batch-private-cluster-redis.png)
 
@@ -318,7 +326,7 @@ Currently, the following resources are deployed to your Azure Subscription:
   to access the key vault to fetch secrets such as redis cache url, port, access-key etc.
   The MI has RBAC permissions assingned on the Key Vault.
 
-- The Windows Jumpbox will have the following software preinstalled: 
+- The Windows Jumpbox will have the following software preinstalled:
   - Azure Batch Explorer
   - Azure Storage Explorer
   - Azure CLI

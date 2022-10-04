@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.10.61.36676",
-      "templateHash": "13534707940137236430"
+      "templateHash": "12261133450242684168"
     }
   },
   "parameters": {
@@ -50,7 +50,6 @@
     },
     "prefix": {
       "type": "string",
-      "defaultValue": "[uniqueString(parameters('environment'), subscription().id, parameters('resourceGroupLocation'), parameters('demoType'))]",
       "maxLength": 13
     },
     "deployHubSpoke": {
@@ -137,9 +136,8 @@
     },
     "batchServiceObjectId": {
       "type": "string",
-      "defaultValue": "f520d84c-3fd3-4cc8-88d4-2ed25b00d27a",
       "metadata": {
-        "description": "Get the Batch Service Object Id: az ad sp show --id \"MicrosoftAzureBatch\" --query id -o tsv"
+        "description": "Get the Batch Service Object Id: az ad sp list --display-name \"Microsoft Azure Batch\" --filter \"displayName eq 'Microsoft Azure Batch'\" | jq -r '.[].id'"
       }
     },
     "batchNodeSku": {

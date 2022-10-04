@@ -40,13 +40,22 @@
    ```sh
     az ad sp list --display-name "Microsoft Azure Batch" --filter "displayName eq 'Microsoft Azure Batch'" | jq -r '.[].id'
 
-    # output
+    # output some alpha numeric string e.g.
     f520d84c-3fd3-4cc8-88d4-2ed25b00d27a
    ```
 
-   If the output is different than the value shown then you will need to enter that value,
+   Save the value shown then you will need to enter that value,
    instead of the default, for `batchServiceObjectId` (shown as **Batch Service Object Id**,
    if deploying using the portal) when deploying the infrastructure.
+
+   If the above returns an empty string, you may have to register "Microsoft.Batch" as a registered
+   resource provider for your subscription. You can do that using the portal, browse to your Subscription >
+   Resource Providers and then search for `Microsoft.Batch`. Or use the following command and then try
+   the `az ad sp list ...` command again
+
+   ```sh
+   az provider register -n Microsoft.Batch --subscription <your subscription name> --wait
+   ```
 
 ## Deployment
 

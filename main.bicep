@@ -115,7 +115,7 @@ var needsRedisCache = {
 }
 
 @maxLength(13)
-param prefix string = uniqueString(environment, subscription().id, resourceGroupLocation, demoType)
+param prefix string
 
 @description('Indicate if Hub-Spoke Network should be deployed.')
 param deployHubSpoke bool = true

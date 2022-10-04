@@ -169,7 +169,7 @@ param jumpboxLinuxVmSize string = 'Standard_B1s'
 param jumpboxWindowsVmSize string = 'Standard_D4_v5'
 
 @description('Get the Batch Service Object Id: az ad sp list --display-name "Microsoft Azure Batch" --filter "displayName eq \'Microsoft Azure Batch\'" | jq -r \'.[].id\'')
-param batchServiceObjectId string = 'f520d84c-3fd3-4cc8-88d4-2ed25b00d27a'
+param batchServiceObjectId string
 
 
 @allowed([ 
